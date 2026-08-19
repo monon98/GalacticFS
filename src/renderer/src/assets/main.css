@@ -1,0 +1,671 @@
+/**
+ * GalacticFS 全局样式：品牌深色主题（文档 §8 配色规范）。
+ * 背景 #0B0C10、强调 #45A29E、高亮 #FF6B35、金色 #F5C842。
+ * 布局：顶部导航 + 左侧边栏 + 全屏 3D 场景 + 右侧浮动选中面板。
+ */
+
+/* ---------- 全局 ---------- */
+
+body {
+  margin: 0;
+  overflow: hidden;
+  background-color: #0b0c10;
+  color: #c5c6c7;
+  font-family: 'Microsoft YaHei', 'PingFang SC', system-ui, sans-serif;
+  user-select: none;
+}
+
+#root {
+  height: 100vh;
+  width: 100vw;
+}
+
+button {
+  font-family: inherit;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  position: relative;
+}
+
+/* ---------- 顶部导航 ---------- */
+
+.topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 16px;
+  background: linear-gradient(180deg, rgba(11, 12, 16, 0.95) 0%, rgba(11, 12, 16, 0.75) 100%);
+  border-bottom: 1px solid rgba(69, 162, 158, 0.25);
+  backdrop-filter: blur(6px);
+}
+
+.app-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #45a29e;
+  letter-spacing: 2px;
+  white-space: nowrap;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.breadcrumb-back {
+  background: none;
+  border: 1px solid rgba(69, 162, 158, 0.5);
+  color: #45a29e;
+  border-radius: 4px;
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.breadcrumb-back:hover {
+  background: rgba(69, 162, 158, 0.2);
+}
+
+/* 返回起始目录按钮（金色，与面包屑的后退区分） */
+.home-button {
+  background: none;
+  border: 1px solid rgba(245, 200, 66, 0.6);
+  color: #f5c842;
+  border-radius: 4px;
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.home-button:hover {
+  background: rgba(245, 200, 66, 0.2);
+  color: #fff;
+}
+
+.breadcrumb-item {
+  background: none;
+  border: none;
+  color: #c5c6c7;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.breadcrumb-item:hover {
+  background: rgba(69, 162, 158, 0.15);
+  color: #fff;
+}
+
+.breadcrumb-item.current {
+  color: #f5c842;
+}
+
+.breadcrumb-separator {
+  color: #6b6e70;
+  margin: 0 2px;
+}
+
+/* ---------- 扫描进度 ---------- */
+
+.progress-overlay {
+  position: fixed;
+  top: 52px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  width: 360px;
+  background: rgba(11, 12, 16, 0.9);
+  border: 1px solid rgba(69, 162, 158, 0.4);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+}
+
+.progress-label {
+  color: #45a29e;
+  margin-bottom: 6px;
+}
+
+.progress-track {
+  height: 4px;
+  background: #1f2833;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #45a29e, #f5c842);
+  animation: progress-slide 1.2s ease-in-out infinite;
+}
+
+@keyframes progress-slide {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.progress-current {
+  margin-top: 6px;
+  color: #6b6e70;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------- 左侧边栏 ---------- */
+
+.sidebar {
+  position: fixed;
+  left: 0;
+  top: 52px;
+  bottom: 0;
+  width: 220px;
+  z-index: 15;
+  padding: 16px;
+  background: rgba(11, 12, 16, 0.82);
+  border-right: 1px solid rgba(69, 162, 158, 0.2);
+  backdrop-filter: blur(4px);
+  overflow-y: auto;
+}
+
+.sidebar-title {
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: #f5c842;
+  word-break: break-all;
+}
+
+.sidebar-hint {
+  font-size: 12px;
+  color: #6b6e70;
+  line-height: 1.7;
+}
+
+.sidebar-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.sidebar-row span:first-child {
+  color: #6b6e70;
+}
+
+.sidebar-row span:last-child {
+  color: #c5c6c7;
+  text-align: right;
+  word-break: break-all;
+}
+
+/* 侧边栏分组标题与完整路径 */
+.sidebar-section {
+  margin: 12px 0 4px;
+  font-size: 12px;
+  color: #45a29e;
+  border-bottom: 1px solid rgba(69, 162, 158, 0.25);
+  padding-bottom: 4px;
+}
+
+.sidebar-path {
+  font-size: 11px;
+  color: #6b6e70;
+  word-break: break-all;
+  line-height: 1.6;
+  user-select: text;
+  margin: 4px 0 0;
+}
+
+/* 文本内容预览：等宽字体 + 受限高度滚动，不撑破侧边栏 */
+.sidebar-preview {
+  margin: 6px 0 0;
+  padding: 8px;
+  max-height: 280px;
+  overflow: auto;
+  font-family: 'Cascadia Code', Consolas, 'Courier New', monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #c5c6c7;
+  background: rgba(11, 12, 16, 0.6);
+  border: 1px solid rgba(69, 162, 158, 0.25);
+  border-radius: 6px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  user-select: text;
+}
+
+/* ---------- 右侧选中面板 ---------- */
+
+.selection-panel {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 15;
+  width: 300px;
+  max-height: 40vh;
+  background: rgba(11, 12, 16, 0.92);
+  border: 1px solid rgba(255, 107, 53, 0.5);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.selection-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255, 107, 53, 0.3);
+  color: #ff6b35;
+  font-size: 13px;
+}
+
+.selection-clear {
+  background: none;
+  border: none;
+  color: #c5c6c7;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.selection-clear:hover {
+  color: #fff;
+}
+
+.selection-list {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  overflow-y: auto;
+}
+
+.selection-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  font-size: 12px;
+}
+
+.selection-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.selection-icon {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.selection-icon.dir {
+  background: #45a29e;
+  box-shadow: 0 0 6px rgba(69, 162, 158, 0.8);
+}
+
+.selection-icon.file {
+  background: #6b6e70;
+}
+
+.selection-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selection-size {
+  color: #6b6e70;
+  flex-shrink: 0;
+}
+
+.selection-open {
+  background: none;
+  border: 1px solid #45a29e;
+  color: #45a29e;
+  border-radius: 4px;
+  font-size: 11px;
+  padding: 2px 8px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.selection-open:hover {
+  background: rgba(69, 162, 158, 0.2);
+}
+
+/* ---------- 3D 场景内标签（drei Html） ---------- */
+
+.planet-label {
+  display: inline-block;
+  font-size: 15px;
+  font-weight: 600;
+  color: #e0e0e0;
+  text-shadow:
+    0 1px 4px rgba(0, 0, 0, 0.9),
+    0 0 8px rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: rgba(11, 12, 16, 0.55);
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* 目录标签：金色徽章 + 目录图标前缀，与文件明显区分 */
+.planet-label.dir {
+  color: #f5c842;
+  border-color: rgba(245, 200, 66, 0.55);
+  background: rgba(245, 200, 66, 0.1);
+  font-weight: 700;
+}
+
+.planet-label.dir::before {
+  content: '▣ ';
+  font-size: 13px;
+}
+
+.planet-label:not(.dir)::before {
+  content: '• ';
+  color: #6b6e70;
+}
+
+/* ---------- 设置按钮与面板 ---------- */
+
+.settings-button {
+  background: none;
+  border: 1px solid rgba(69, 162, 158, 0.5);
+  color: #45a29e;
+  border-radius: 4px;
+  font-size: 13px;
+  padding: 4px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.settings-button:hover {
+  background: rgba(69, 162, 158, 0.2);
+  color: #fff;
+}
+
+.settings-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ---------- 搜索框（文档 §2.2 搜索高亮） ---------- */
+
+.search-input {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(69, 162, 158, 0.4);
+  border-radius: 4px;
+  color: #fff;
+  font-size: 13px;
+  padding: 4px 10px;
+  width: 200px;
+  outline: none;
+}
+
+.search-input:focus {
+  border-color: #45a29e;
+  box-shadow: 0 0 6px rgba(69, 162, 158, 0.35);
+}
+
+.search-input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+/* ---------- 应用内右键菜单（复制路径/定位） ---------- */
+
+.context-menu {
+  position: fixed;
+  z-index: 100;
+  min-width: 180px;
+  background: rgba(15, 17, 22, 0.96);
+  border: 1px solid rgba(69, 162, 158, 0.4);
+  border-radius: 6px;
+  padding: 4px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+}
+
+.context-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  color: #d6d9de;
+  font-size: 13px;
+  padding: 7px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.context-menu-item:hover {
+  background: rgba(69, 162, 158, 0.25);
+  color: #fff;
+}
+
+/* ---------- 目录切换过渡（文档 §6.3 场景渐变过渡） ---------- */
+
+.scene-fade {
+  width: 100%;
+  height: 100%;
+  animation: scene-fade-in 0.4s ease;
+}
+
+@keyframes scene-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(1.02);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.settings-panel {
+  width: 380px;
+  background: #14181d;
+  border: 1px solid rgba(69, 162, 158, 0.4);
+  border-radius: 10px;
+  padding: 20px 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+}
+
+.settings-title {
+  margin: 0 0 16px;
+  font-size: 16px;
+  color: #f5c842;
+}
+
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  color: #c5c6c7;
+}
+
+.settings-field.check {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-field input[type='text'] {
+  background: #0b0c10;
+  border: 1px solid #1f2833;
+  border-radius: 4px;
+  color: #e0e0e0;
+  font-size: 13px;
+  padding: 7px 10px;
+  outline: none;
+}
+
+.settings-field input[type='text']:focus {
+  border-color: #45a29e;
+}
+
+.settings-field input[type='checkbox'] {
+  accent-color: #45a29e;
+  width: 15px;
+  height: 15px;
+}
+
+.settings-error {
+  color: #ff6b35;
+  font-size: 12px;
+  margin-bottom: 10px;
+  word-break: break-all;
+}
+
+.settings-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.settings-cancel {
+  background: none;
+  border: 1px solid #1f2833;
+  color: #c5c6c7;
+  border-radius: 4px;
+  font-size: 13px;
+  padding: 6px 16px;
+  cursor: pointer;
+}
+
+.settings-cancel:hover {
+  border-color: #6b6e70;
+}
+
+.settings-save {
+  background: #45a29e;
+  border: none;
+  color: #0b0c10;
+  border-radius: 4px;
+  font-size: 13px;
+  padding: 6px 20px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.settings-save:hover {
+  background: #f5c842;
+}
+
+.settings-save:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* ---------- 场景容器 ---------- */
+
+.scene-host {
+  position: absolute;
+  inset: 0;
+}
+
+/* ---------- 加载 / 错误 ---------- */
+
+.loading-view,
+.error-view {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: #0b0c10;
+  font-size: 14px;
+  color: #c5c6c7;
+  z-index: 10;
+}
+
+.loading-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #1f2833;
+  border-top-color: #45a29e;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.error-view pre {
+  color: #ff6b35;
+  max-width: 600px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-size: 12px;
+}
+
+.error-view button {
+  background: #45a29e;
+  border: none;
+  color: #0b0c10;
+  font-size: 13px;
+  padding: 6px 18px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.error-view button:hover {
+  background: #f5c842;
+}

@@ -1,0 +1,5 @@
+# 开发模式自动更新源（dev 下 electron-updater 读取此文件；生产用打包生成的 app-update.yml）
+provider: github
+owner: monon98
+repo: GalacticFS
+updaterCacheDirName: galacticfs-updater

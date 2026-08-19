@@ -1,0 +1,72 @@
+# 自动构建与发布：打 v* 标签（或手动触发）时，
+# 在 Windows 上打包 NSIS 安装包并上传到 GitHub Releases（electron-updater 经 latest.yml 自动更新）。
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: 安装依赖（frozen-lockfile 保证可复现；better-sqlite3 走 prebuilds 免编译）
+        run: pnpm install --frozen-lockfile
+
+      - name: 静态检查与单元测试
+        run: |
+          pnpm typecheck
+          pnpm lint
+          pnpm test
+
+      - name: 打包并发布到 GitHub Releases
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # --publish always：electron-builder 上传安装包 + latest.yml + blockmap（增量更新依赖）
+        run: pnpm build:win --publish always
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: 静态检查与单元测试
+        run: |
+          pnpm typecheck
+          pnpm lint
+          pnpm test
+
+      - name: 打包 Linux 并发布（AppImage + deb；无代码签名）
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pnpm exec electron-vite build
+          pnpm exec electron-builder --linux AppImage deb --publish always
