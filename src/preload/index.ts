@@ -107,6 +107,14 @@ const api = {
   readFilePreview: (filePath: string): Promise<{ text: string } | null> =>
     ipcRenderer.invoke('read-file-preview', filePath),
 
+  /**
+   * 获取应用信息（版本号/平台），设置面板"关于"区域使用。
+   */
+  getAppInfo: (): Promise<{ version: string; platform: string }> => ipcRenderer.invoke('app-info'),
+
+  /** 获取启动初始路径（右键菜单 --open-path 传入，一次性）；无则返回 null */
+  getOpenPath: (): Promise<string | null> => ipcRenderer.invoke('get-open-path'),
+
   /** 订阅根路径设置事件（右键菜单 "--open-path" 参数传入）；返回取消订阅函数 */
   onSetRootPath: (callback: (path: string) => void): (() => void) => {
     const listener = (_event: IpcRendererEvent, path: string): void => callback(path)

@@ -2,7 +2,7 @@
  * Windows 右键菜单集成：注册 "在 GalacticFS 中浏览" 到目录/磁盘与文件的右键菜单（文档 §4.2）。
  * 通过注册表 HKCU\Software\Classes\{Directory,*}\shell\GalacticFS 实现，仅打包后注册，
  * 免管理员权限；NSIS 安装脚本（installer/installer.nsh）另行注册 HKCR 全局键，双重保障。
- * 注册命令：<exe> --open-path "%1"，主进程解析后经 set-root-path 事件通知渲染进程。
+ * 注册命令：<exe> --open-path "%1"，主进程解析后经 get-open-path IPC 供渲染进程拉取。
  */
 
 import { execFile } from 'node:child_process'

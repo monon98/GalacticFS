@@ -83,6 +83,24 @@ describe('spiralOrbits 独轨布局', () => {
     // 任意两星连线不经过中心（角度不同）
     angles.forEach((a) => expect(Math.abs(Math.sin(a))).toBeGreaterThan(0.01))
   })
+
+  it('maxRadius 封顶：条目极多时并入最外轨道，轨道半径不超过上限', () => {
+    // 60 个不同半径：无封顶时轨道半径线性爆炸，封顶后全部落在 [first, maxRadius] 内
+    const radii = Array.from({ length: 60 }, (_, i) => 0.3 + i * 0.05)
+    const placements = spiralOrbits(radii, 5, 0.4, 0.6, 0.5, 24)
+    const maxR = Math.max(...placements.map((p) => Math.hypot(p.position[0], p.position[2])))
+    expect(maxR).toBeLessThanOrEqual(24 + 1e-6)
+    // 半径种类 60 > 封顶容纳的轨道数：至少存在一条轨道承载多个不同半径的星体（合并发生）
+    const orbitCount = new Set(placements.map((p) => p.orbitIndex)).size
+    expect(orbitCount).toBeLessThan(60)
+  })
+
+  it('maxRadius 足够大时不影响原有布局（默认不封顶）', () => {
+    const radii = [0.3, 0.9, 1.8, 0.6]
+    const placements = spiralOrbits(radii, 5)
+    const orbits = new Set(placements.map((p) => p.orbitIndex))
+    expect(orbits.size).toBe(4)
+  })
 })
 
 describe('computeGalacticCoreRadius 中心最大原则', () => {

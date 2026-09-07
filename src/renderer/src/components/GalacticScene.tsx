@@ -30,6 +30,15 @@ const LABEL_THRESHOLD = 150
 /** 文件轨道最小起始半径（恒星较小或场景简单时的下限） */
 const FILE_ORBIT_FIRST_MIN = 4.6
 /**
+ * 文件带最外轨道半径上限：目录内文件极多时（数百个）轨道半径线性爆炸，
+ * 会与外圈星系带（40 起）交错。封顶后多余文件并入最外轨道（黄金角保证不重叠）。
+ * 上限 = 星系第一轨道 40 − 星系核最大 8.1 − 文件行星最大半径 3.0 ≈ 28.9，
+ * 取 24 留出余量：文件带与星系带径向完全分离（星系核内侧边缘 ≥ 31.9）。
+ */
+const FILE_BAND_MAX_RADIUS = 24
+/** 星系内最多展示的子文件数：子目录文件过多时只显示最大的 N 个，避免星系内部干扰 */
+const GALAXY_MAX_CHILDREN = 10
+/**
  * 子星系轨道：起始半径。
  * 星系间距约束：星系间距离必须大于星体内距离。
  * 星系核放大后最大 8.1（≤6.0 × 1.35）→ 子文件环 childOrbit ≤ 19.5。
@@ -102,11 +111,15 @@ export function GalacticScene({
   }, [currentDir])
 
   // 子星系：星系核 = max(自身大小半径, 子文件最大半径 × 2.0) × 1.35（中心最大 + 子目录星体放大）；
+  // 子文件只展示最大的 GALAXY_MAX_CHILDREN 个（过多时干扰视线，星系核尺寸也随截断变小）；
   // 有效半径 = 星系核 + 子文件环，轨道间距额外加 DIR_ORBIT_GAP，星系间距离足够远
   const galaxies = useMemo(
     () =>
       dirs.map((dir) => {
-        const subFiles = (dir.children ?? []).filter((n) => !n.isDirectory)
+        const subFiles = (dir.children ?? [])
+          .filter((n) => !n.isDirectory)
+          .sort((a, b) => b.size - a.size)
+          .slice(0, GALAXY_MAX_CHILDREN)
         const core =
           computeGalacticCoreRadius(
             Math.max(getPlanetRadius(dir.size), 0.8),
@@ -127,12 +140,17 @@ export function GalacticScene({
   }, [files, galaxies])
 
   // 独轨布局：每颗行星独享轨道（相同半径共享"小行星带"轨道）。
-  // 大文件近中央（大星体内轨）；最内轨道须大于恒星半径 + 最大文件半径，避免与恒星重叠
+  // 大文件近中央（大星体内轨）；最内轨道须大于恒星半径 + 最大文件半径，避免与恒星重叠；
+  // maxRadius 封顶：文件极多时并入最外轨道，文件带整体不越过星系带（同心带结构）
   const filePlacements = useMemo(
     () =>
       spiralOrbits(
         files.map((n) => getPlanetRadius(n.size)),
-        Math.max(FILE_ORBIT_FIRST_MIN, starRadius + 3.4)
+        Math.max(FILE_ORBIT_FIRST_MIN, starRadius + 3.4),
+        0.4,
+        0.6,
+        0.5,
+        FILE_BAND_MAX_RADIUS
       ),
     [files, starRadius]
   )
@@ -144,8 +162,9 @@ export function GalacticScene({
         DIR_ORBIT_GAP
       ).map((p, i) => ({
         ...p,
-        // 星系不都在同一水平面：按路径哈希稳定随机 y 偏移（±4，小于星系间距不会重叠）
-        position: [p.position[0], (hashSeed(galaxies[i].dir.path) % 9) - 4, p.position[2]] as [
+        // 星系整体抬升到文件平面（y=0）之上：[6, 11]，与一级目录文件垂直分层不共面。
+        // 径向（文件带 ≤24 vs 星系带 ≥40）已分离，垂直抬升增强视觉区分
+        position: [p.position[0], 6 + (hashSeed(galaxies[i].dir.path) % 6), p.position[2]] as [
           number,
           number,
           number

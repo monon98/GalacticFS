@@ -49,11 +49,15 @@ export function speedFactor(seed: string): number {
  * 保证任何球不重叠（最小角度差 ≥ 黄金角 − 扰动幅度，弦距恒大于最大球直径）。
  * 每条轨道的起始相位随轨道序号递增（phaseOffset），避免星体从中心呈放射直线排列。
  * 大星体分配内轨（越靠近中央）、小星体外轨——"体积大的星球越靠近中心"的用户偏好。
+ * 条目极多时（数百个文件）轨道半径会线性爆炸：用 maxRadius 封顶——达到上限后
+ * 剩余组并入最后一条轨道（黄金角在任意数量下均匀分布，弦距 = 2R·sin(Δθ/2) 恒大于
+ * 最大球直径，不重叠）。这样文件带半径受限，不会与外围星系带（40 起）交错。
  * @param radii 每项的星体半径（长度 = 条目数）
  * @param firstOrbitRadius 第一条（最内）轨道半径
  * @param angularGap 相邻轨道间的最小径向间距
  * @param phaseOffset 轨道间起始相位错开量（弧度，每轨道递增）
  * @param jitter 同轨道内角度随机扰动幅度（弧度，±jitter/2）
+ * @param maxRadius 最外轨道半径上限（封顶后多余组并入最外轨道；Infinity = 不限）
  * @returns 与输入顺序对应的位置数组
  */
 export function spiralOrbits(
@@ -61,7 +65,8 @@ export function spiralOrbits(
   firstOrbitRadius: number,
   angularGap = 0.4,
   phaseOffset = 0.6,
-  jitter = 0.5
+  jitter = 0.5,
+  maxRadius = Infinity
 ): OrbitPlacement[] {
   // 按半径分组：相同半径共享一条轨道（等价"小行星带"）
   const groups = new Map<number, number[]>()
@@ -75,21 +80,32 @@ export function spiralOrbits(
   const placements: OrbitPlacement[] = []
   let orbitRadius = firstOrbitRadius
   let prevRadius = 0
-  sortedRadii.forEach((radius, orbitIndex) => {
-    // 径向间距 = 相邻两组半径和 + gap：两球投影不重叠
-    if (orbitIndex > 0) orbitRadius += prevRadius + radius + angularGap
+  let capped = false
+  let orbitSeq = 0
+  sortedRadii.forEach((radius) => {
+    // 封顶后所有组共用最外轨道（半径 = maxRadius，黄金角继续均分）
+    if (!capped) {
+      const next = orbitSeq > 0 ? orbitRadius + prevRadius + radius + angularGap : orbitRadius
+      if (next > maxRadius) {
+        capped = true
+        orbitRadius = maxRadius
+      } else {
+        orbitRadius = next
+      }
+    }
     const indices = groups.get(radius)!
     // 随机扰动：每条轨道生成一组 ±jitter/2 的偏移量（观察者视角"随机分布"）
     const jitters = indices.map(() => (Math.random() - 0.5) * jitter)
     indices.forEach((index, k) => {
       // 相位错开 + 黄金角 + 随机扰动：同轨道内均匀中带随机、跨轨道不共线
-      const angle = phaseOffset * (orbitIndex + 1) + k * GOLDEN_ANGLE + jitters[k]
+      const angle = phaseOffset * (orbitSeq + 1) + k * GOLDEN_ANGLE + jitters[k]
       placements[index] = {
         position: [Math.cos(angle) * orbitRadius, 0, Math.sin(angle) * orbitRadius],
-        orbitIndex
+        orbitIndex: orbitSeq
       }
     })
     prevRadius = radius
+    if (!capped) orbitSeq++
   })
   return placements
 }

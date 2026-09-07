@@ -82,6 +82,23 @@ function MainView({
     })
   }, [navigate])
 
+  // 启动初始路径：挂载后主动拉取 --open-path（invoke 无竞态，替代 did-finish-load 推送）
+  useEffect(() => {
+    let cancelled = false
+    window.electronAPI
+      .getOpenPath()
+      .then((path) => {
+        if (path && !cancelled) {
+          navigate(path)
+          setSelected([])
+        }
+      })
+      .catch(() => undefined)
+    return () => {
+      cancelled = true
+    }
+  }, [navigate])
+
   // 目录切换时清空选中（旧目录的对象已不在场景中）
   useEffect(() => {
     setSelected([])

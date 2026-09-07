@@ -30,6 +30,8 @@ declare global {
       getFolderStats(dirPath: string): Promise<FolderStats>
       getFileInfo(filePath: string): Promise<FileInfo | null>
       readFilePreview(filePath: string): Promise<{ text: string } | null>
+      getAppInfo(): Promise<{ version: string; platform: string }>
+      getOpenPath(): Promise<string | null>
       onSetRootPath(callback: (path: string) => void): () => void
     }
   }

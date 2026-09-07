@@ -31,6 +31,17 @@ export function SettingsPanel({
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // 应用信息（版本号等）：面板"关于"区域展示
+  const [appInfo, setAppInfo] = useState<{ version: string; platform: string } | null>(null)
+
+  // 打开时读取应用信息（版本号）
+  useEffect(() => {
+    if (!open) return
+    window.electronAPI
+      .getAppInfo()
+      .then(setAppInfo)
+      .catch(() => setAppInfo(null))
+  }, [open])
 
   // 打开时从主进程读取当前配置，回填表单
   useEffect(() => {
@@ -110,6 +121,12 @@ export function SettingsPanel({
         </label>
 
         {error && <div className="settings-error">{error}</div>}
+
+        {/* 关于：版本号 + 平台信息（文档 §4.1 关于信息） */}
+        <div className="settings-about">
+          <span>GalacticFS</span>
+          <span>{appInfo ? `v${appInfo.version} · ${appInfo.platform}` : '…'}</span>
+        </div>
 
         <div className="settings-actions">
           <button type="button" className="settings-cancel" onClick={onClose}>

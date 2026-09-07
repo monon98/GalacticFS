@@ -11,6 +11,9 @@ import Store from 'electron-store'
 export interface WindowBounds {
   width: number
   height: number
+  x?: number
+  y?: number
+  isMaximized?: boolean
 }
 
 /** 全部用户配置项 */
@@ -43,7 +46,7 @@ export class ConfigStore {
       defaultRootPath: process.env.USERPROFILE || process.env.HOME || '/',
       lastOpenedPath: '',
       recentPaths: [],
-      windowBounds: { width: 1200, height: 800 },
+      windowBounds: { width: 1280, height: 800 },
       includeHidden: false,
       ignoredFolders: [],
       ...options.defaults

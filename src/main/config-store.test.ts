@@ -26,7 +26,7 @@ describe('ConfigStore', () => {
     expect(store.defaultRootPath).toBe(process.env.USERPROFILE || process.env.HOME || '/')
     expect(store.lastOpenedPath).toBe('')
     expect(store.recentPaths).toEqual([])
-    expect(store.windowBounds).toEqual({ width: 1200, height: 800 })
+    expect(store.windowBounds).toEqual({ width: 1280, height: 800 })
   })
 
   it('配置变更后持久化到磁盘', () => {

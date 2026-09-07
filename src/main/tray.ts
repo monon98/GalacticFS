@@ -9,10 +9,13 @@ import { app, dialog, Menu, Tray, nativeImage } from 'electron'
 import type { BrowserWindow } from 'electron'
 import { join } from 'node:path'
 
-/** 托盘图标路径（打包后位于 resources 目录） */
+/**
+ * 托盘图标路径：dev 为项目 resources，打包后为 asar 内 resources（Electron 透明支持 asar 路径）。
+ * 注意：打包后图标在 app.asar/resources 内，process.resourcesPath 根目录下不存在 icon.png，
+ * 误用会导致图标为空、托盘静默降级不显示。
+ */
 function trayIconPath(): string {
-  const iconPath = join(__dirname, '../../resources/icon.png')
-  return app.isPackaged ? join(process.resourcesPath, 'icon.png') : iconPath
+  return join(__dirname, '../../resources/icon.png')
 }
 
 /**

@@ -7,7 +7,7 @@
  * scan-partial 分段推送首层结果，渲染层先显示行星再等完整树。
  */
 
-import { BrowserWindow, dialog, ipcMain, shell } from 'electron'
+import { BrowserWindow, app, dialog, ipcMain, shell } from 'electron'
 import { statSync } from 'node:fs'
 import { readFile, stat, writeFile } from 'node:fs/promises'
 import type { FileScanner } from './file-scanner'
@@ -18,6 +18,18 @@ import { ScanAbortedError } from '../shared/types'
 import { canPreview, PREVIEW_MAX_BYTES } from '../shared/preview'
 import { generateThumbnail } from './thumbnail-generator'
 import { collectFolderStats } from './folder-stats'
+
+/**
+ * 解析命令行 "--open-path <path>"（右键菜单"在 GalacticFS 中浏览"传入）。
+ * 返回路径字符串；未传入时返回 null。
+ */
+function resolveOpenPathArg(): string | null {
+  const index = process.argv.indexOf('--open-path')
+  return index !== -1 && process.argv[index + 1] ? process.argv[index + 1] : null
+}
+
+/** 初始路径是否已被渲染进程拉取（一次性语义：重挂载不重复跳转） */
+let openPathConsumed = false
 
 /** 扫描缓存 TTL（毫秒）：目录 mtime 未变且未超时则直接复用结果 */
 const SCAN_CACHE_TTL = 10_000
@@ -200,6 +212,20 @@ export function registerIpcHandlers(deps: {
     } catch {
       return null
     }
+  })
+
+  // 应用信息（版本号/平台）：设置面板"关于"区域展示（文档 §4.1）
+  ipcMain.handle('app-info', () => ({
+    version: app.getVersion(),
+    platform: process.platform
+  }))
+
+  // 启动初始路径：渲染进程挂载后主动拉取 --open-path（一次性）。
+  // 用 invoke 而非 did-finish-load 推送，避免渲染端监听器未注册时事件丢失（竞态）。
+  ipcMain.handle('get-open-path', () => {
+    if (openPathConsumed) return null
+    openPathConsumed = true
+    return resolveOpenPathArg()
   })
 
   // 文件内容预览：仅扩展名白名单内的文本文件（≤64KB），读取失败返回 null（只读浏览）。

@@ -568,6 +568,25 @@ button {
   word-break: break-all;
 }
 
+/* 关于区域：版本号与平台信息，置于底部按钮区上方 */
+.settings-about {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 4px 0 10px;
+  padding: 8px 10px;
+  font-size: 12px;
+  color: #6b6e70;
+  background: rgba(11, 12, 16, 0.5);
+  border: 1px solid rgba(69, 162, 158, 0.2);
+  border-radius: 6px;
+}
+
+.settings-about span:first-child {
+  color: #45a29e;
+  font-weight: 600;
+}
+
 .settings-actions {
   display: flex;
   justify-content: flex-end;
