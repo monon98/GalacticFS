@@ -145,6 +145,14 @@ export function formatSize(bytes: number): string {
   return `${value.toFixed(1)} ${units[unit]}`
 }
 
+/**
+ * 独立公转速度：按轨道半径倒数衰减（外轨慢、内轨快，开普勒感）。
+ * @param orbitRadius 轨道半径
+ */
+export function orbitSpeed(orbitRadius: number): number {
+  return 0.9 / (0.5 + orbitRadius)
+}
+
 /** 格式化时间戳为本地日期字符串 */
 export function formatTime(mtimeMs: number): string {
   return new Date(mtimeMs).toLocaleString('zh-CN', { hour12: false })

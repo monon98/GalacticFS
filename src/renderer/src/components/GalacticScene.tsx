@@ -16,12 +16,14 @@ import type { FileNode } from '../../../shared/types'
 import { getPlanetRadius } from '../../../shared/visual-mapping'
 import { Planet } from './Planet'
 import { Star } from './Star'
+import { FileInstancedLayer } from './FileInstancedLayer'
 import {
   layoutChildPosition,
   spiralOrbits,
   computeGalacticCoreRadius,
   speedFactor,
-  hashSeed
+  hashSeed,
+  orbitSpeed
 } from '../utils/scene'
 
 /** 超过该条目数时关闭名称标签，保证帧率（文档 §7.1 ≥30 FPS） */
@@ -48,14 +50,6 @@ const GALAXY_MAX_CHILDREN = 10
 const DIR_ORBIT_FIRST = 40
 /** 子星系间的额外径向间距（大于星体内距离上限，保证星系间距离 > 星体内距离） */
 const DIR_ORBIT_GAP = 20
-
-/**
- * 独立公转速度：按轨道半径倒数衰减（外轨慢、内轨快，开普勒感）。
- * @param orbitRadius 轨道半径（px 世界单位）
- */
-function orbitSpeed(orbitRadius: number): number {
-  return 0.9 / (0.5 + orbitRadius)
-}
 
 /** 公转容器：把 children 整体绕中心（原点）Y 轴旋转，速度独立可配 */
 function OrbitalGroup({
@@ -109,6 +103,16 @@ export function GalacticScene({
       dirs: all.filter((n) => n.isDirectory)
     }
   }, [currentDir])
+
+  // 鼠标归一化坐标（用于 InstancedMesh 射线检测）
+  const [mouse, setMouse] = useState<{ x: number; y: number } | null>(null)
+  const onPointerMove = (event: React.PointerEvent<HTMLDivElement>): void => {
+    const rect = (event.target as HTMLDivElement).getBoundingClientRect()
+    setMouse({
+      x: ((event.clientX - rect.left) / rect.width) * 2 - 1,
+      y: -((event.clientY - rect.top) / rect.height) * 2 + 1
+    })
+  }
 
   // 子星系：星系核 = max(自身大小半径, 子文件最大半径 × 2.0) × 1.35（中心最大 + 子目录星体放大）；
   // 子文件只展示最大的 GALAXY_MAX_CHILDREN 个（过多时干扰视线，星系核尺寸也随截断变小）；
@@ -192,6 +196,7 @@ export function GalacticScene({
       camera={{ position: [0, 11, 16], fov: 60 }}
       dpr={[1, 1.5]}
       gl={{ preserveDrawingBuffer: true }}
+      onPointerMove={onPointerMove}
     >
       <GalaxySceneContent
         files={files}
@@ -209,6 +214,7 @@ export function GalacticScene({
         onContextMenu={onContextMenu}
         exportRequest={exportRequest}
         onExported={onExported}
+        mouse={mouse}
       />
     </Canvas>
   )
@@ -230,16 +236,15 @@ function GalaxySceneContent({
   onGoUp,
   onContextMenu,
   exportRequest,
-  onExported
+  onExported,
+  mouse
 }: {
   files: FileNode[]
   dirs: FileNode[]
   filePositions: [number, number, number][]
   dirPositions: [number, number, number][]
-  /** 子星系数据（星系核半径/子文件环/子文件），渲染与布局共用 */
   galaxies: { dir: FileNode; core: number; subFiles: FileNode[]; childOrbit: number }[]
   starRadius: number
-  /** 搜索命中路径集合（null = 未在搜索） */
   searchMatchedPaths: Set<string> | null
   currentDir: FileNode
   selectedPaths: Set<string>
@@ -249,10 +254,12 @@ function GalaxySceneContent({
   onContextMenu: (node: FileNode, screenX: number, screenY: number) => void
   exportRequest: number
   onExported?: (dataUrl: string) => void
+  mouse: { x: number; y: number } | null
 }): React.JSX.Element {
   // 导出截图：请求计数变化时抓取当前帧输出为 PNG（preserveDrawingBuffer 保证非黑屏）
   const gl = useThree((state) => state.gl)
   const [lastExport, setLastExport] = useState(0)
+
   useEffect(() => {
     if (exportRequest > 0 && exportRequest !== lastExport) {
       setLastExport(exportRequest)
@@ -260,8 +267,11 @@ function GalaxySceneContent({
       onExported?.(dataUrl)
     }
   }, [exportRequest, lastExport, gl, onExported])
+
   // 标签阈值：任一轨道条目过多时统一关闭
   const showLabels = files.length + dirs.length <= LABEL_THRESHOLD
+  // 大量文件时启用 InstancedMesh（≥ LABEL_THRESHOLD 条目）
+  const useInstanced = files.length >= LABEL_THRESHOLD
 
   return (
     <>
@@ -270,7 +280,7 @@ function GalaxySceneContent({
       <pointLight position={[10, 10, 10]} intensity={1.4} />
       <Stars radius={90} depth={45} count={5000} factor={4} saturation={0} fade speed={0.6} />
 
-      {/* 框选容器：仅处理拖拽框选（单击选中由 Planet 自身处理，避免双触发） */}
+      {/* 框选容器：仅处理拖拽框选（单击选中由 Planet/InstancedLayer 处理，避免双触发） */}
       <Select
         box
         multiple
@@ -283,26 +293,40 @@ function GalaxySceneContent({
           }
         }}
       >
-        {/* 近轨：直接文件，每颗独立公转（速度随轨道半径递减） */}
-        {files.map((node, i) => {
-          const radius = Math.hypot(filePositions[i][0], filePositions[i][2])
-          return (
-            <OrbitalGroup key={node.path} speed={orbitSpeed(radius) * speedFactor(node.path)}>
-              <Planet
-                node={node}
-                position={filePositions[i]}
-                selected={selectedPaths.has(node.path)}
-                searchMatch={searchMatchedPaths?.has(node.path) ?? false}
-                showLabel={showLabels}
-                onSelect={(n) => onSelect([n])}
-                onOpen={onOpen}
-                onContextMenu={onContextMenu}
-              />
-            </OrbitalGroup>
-          )
-        })}
-
+        {/* 近轨：直接文件 */}
+        {useInstanced ? (
+          <FileInstancedLayer
+            files={files}
+            positions={filePositions}
+            selectedPaths={selectedPaths}
+            searchMatchedPaths={searchMatchedPaths}
+            showLabels={showLabels}
+            onSelect={onSelect}
+            onOpen={onOpen}
+            onContextMenu={onContextMenu}
+            mouse={mouse}
+          />
+        ) : (
+          files.map((node, i) => {
+            const radius = Math.hypot(filePositions[i][0], filePositions[i][2])
+            return (
+              <OrbitalGroup key={node.path} speed={orbitSpeed(radius) * speedFactor(node.path)}>
+                <Planet
+                  node={node}
+                  position={filePositions[i]}
+                  selected={selectedPaths.has(node.path)}
+                  searchMatch={searchMatchedPaths?.has(node.path) ?? false}
+                  showLabel={showLabels}
+                  onSelect={(n) => onSelect([n])}
+                  onOpen={onOpen}
+                  onContextMenu={onContextMenu}
+                />
+              </OrbitalGroup>
+            )
+          })
+        )}
         {/* 远轨：子星系（星系核 = 目录，中心最大；星系整体公转，内部文件绕核再公转） */}
+        {/* TODO: Phase 1.2 - GalaxyInstancedLayer + LOD（待完成 hook 顺序修复后启用） */}
         {galaxies.map(({ dir, core, subFiles, childOrbit }, i) => {
           const dirRadius = Math.hypot(dirPositions[i][0], dirPositions[i][2])
           return (
