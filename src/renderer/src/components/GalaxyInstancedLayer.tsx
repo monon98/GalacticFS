@@ -27,10 +27,10 @@ interface GalaxyInstancedLayerProps {
 const _dummy = new THREE.Object3D()
 const _color = new THREE.Color()
 
-export function GalaxyInstancedLayer(props: GalaxyInstancedLayerProps): React.JSX.Element | null {
+export function GalaxyInstancedLayer(props: GalaxyInstancedLayerProps): React.JSX.Element {
   const { galaxies, dirPositions } = props
-  if (galaxies.length === 0) return null
 
+  // 所有 Hook 必须无条件调用（放在最前面），空数据时渲染空片段
   useThree()
 
   // 星系核 InstancedMesh（每星系 1 实例）
@@ -228,8 +228,6 @@ export function GalaxyInstancedLayer(props: GalaxyInstancedLayerProps): React.JS
 
       data.subFiles.forEach((sub, j) => {
         const childOrbitSpeed = orbitSpeed(data.childOrbit) * speedFactor(sub.path)
-        // 子文件相对星系核的角度（这里简化：每帧累加，实际需存储每子文件当前角度）
-        // 为简化，使用全局 elapsed time 计算
         const elapsed = state.clock.getElapsedTime()
         const angle =
           (j / Math.max(data.subFiles.length, 1)) * Math.PI * 2 + elapsed * childOrbitSpeed
@@ -265,7 +263,8 @@ export function GalaxyInstancedLayer(props: GalaxyInstancedLayerProps): React.JS
     }
   }, [])
 
-  if (galaxies.length === 0) return null
+  // 无星系时渲染空片段（保证 Hook 顺序不变）
+  if (galaxies.length === 0) return <></>
 
   return (
     <>
@@ -274,7 +273,7 @@ export function GalaxyInstancedLayer(props: GalaxyInstancedLayerProps): React.JS
         ref={coreMeshRef}
         frustumCulled={false}
         layers={0}
-        // @ts-expect-error R3F types
+        // @ts-expect-error R3F args type mismatch (geometry/material provided via props)
         args={[null, coreData.length, undefined]}
       />
 
@@ -283,7 +282,7 @@ export function GalaxyInstancedLayer(props: GalaxyInstancedLayerProps): React.JS
         ref={coreMesh2Ref}
         frustumCulled={false}
         layers={1}
-        // @ts-expect-error
+        // @ts-expect-error R3F args type mismatch
         args={[null, coreData.length, undefined]}
       />
 
@@ -292,25 +291,33 @@ export function GalaxyInstancedLayer(props: GalaxyInstancedLayerProps): React.JS
         ref={coreMesh3Ref}
         frustumCulled={false}
         layers={2}
-        // @ts-expect-error
+        // @ts-expect-error R3F args type mismatch
         args={[null, coreData.length, undefined]}
       />
 
       {/* 子文件环（每星系一个 mesh，通过 group 定位） */}
       {coreData.map((data) => {
-        const mesh = childMeshRefs.current.get(data.dir.path)
-        if (!mesh || data.subFiles.length === 0) return null
-
+        if (data.subFiles.length === 0) return null
         return (
           <group key={data.dir.path} position={data.position.toArray()}>
             <instancedMesh
-              ref={() => {}}
-              frustumCulled={false}
-              // @ts-expect-error
+              // @ts-expect-error R3F args type mismatch
               args={[null, data.subFiles.length, undefined]}
-            >
-              {Object.assign(mesh, {})} // 这里仅占位，实际 mesh 已在 refs 中管理
-            </instancedMesh>
+              ref={(node) => {
+                if (node) {
+                  const mesh = childMeshRefs.current.get(data.dir.path)
+                  if (mesh) {
+                    node.instanceMatrix = mesh.instanceMatrix
+                    node.instanceColor = mesh.instanceColor
+                    node.count = mesh.count
+                    node.geometry = mesh.geometry
+                    node.material = mesh.material
+                    node.instanceMatrix.setUsage(THREE.DynamicDrawUsage)
+                  }
+                }
+              }}
+              frustumCulled={false}
+            />
           </group>
         )
       })}

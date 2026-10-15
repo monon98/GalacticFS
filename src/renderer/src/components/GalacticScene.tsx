@@ -17,6 +17,7 @@ import { getPlanetRadius } from '../../../shared/visual-mapping'
 import { Planet } from './Planet'
 import { Star } from './Star'
 import { FileInstancedLayer } from './FileInstancedLayer'
+import { GalaxyInstancedLayer } from './GalaxyInstancedLayer'
 import {
   layoutChildPosition,
   spiralOrbits,
@@ -326,45 +327,58 @@ function GalaxySceneContent({
           })
         )}
         {/* 远轨：子星系（星系核 = 目录，中心最大；星系整体公转，内部文件绕核再公转） */}
-        {/* TODO: Phase 1.2 - GalaxyInstancedLayer + LOD（待完成 hook 顺序修复后启用） */}
-        {galaxies.map(({ dir, core, subFiles, childOrbit }, i) => {
-          const dirRadius = Math.hypot(dirPositions[i][0], dirPositions[i][2])
-          return (
-            <OrbitalGroup key={dir.path} speed={orbitSpeed(dirRadius) * speedFactor(dir.path)}>
-              <group position={dirPositions[i]}>
-                <Planet
-                  node={dir}
-                  position={[0, 0, 0]}
-                  level={1}
-                  radius={core}
-                  selected={selectedPaths.has(dir.path)}
-                  searchMatch={searchMatchedPaths?.has(dir.path) ?? false}
-                  showLabel={showLabels}
-                  onSelect={(n) => onSelect([n])}
-                  onOpen={onOpen}
-                  onContextMenu={onContextMenu}
-                />
-                {subFiles.map((sub, j) => (
-                  <OrbitalGroup
-                    key={sub.path}
-                    speed={orbitSpeed(childOrbit) * speedFactor(sub.path)}
-                  >
-                    <Planet
-                      node={sub}
-                      position={layoutChildPosition(j, subFiles.length, childOrbit)}
-                      selected={selectedPaths.has(sub.path)}
-                      searchMatch={searchMatchedPaths?.has(sub.path) ?? false}
-                      showLabel={showLabels}
-                      onSelect={(n) => onSelect([n])}
-                      onOpen={onOpen}
-                      onContextMenu={onContextMenu}
-                    />
-                  </OrbitalGroup>
-                ))}
-              </group>
-            </OrbitalGroup>
-          )
-        })}
+        {useInstanced ? (
+          <GalaxyInstancedLayer
+            galaxies={galaxies}
+            dirPositions={dirPositions}
+            _selectedPaths={selectedPaths}
+            _searchMatchedPaths={searchMatchedPaths}
+            _showLabels={showLabels}
+            _onSelect={onSelect}
+            _onOpen={onOpen}
+            _onContextMenu={onContextMenu}
+            _mouse={mouse}
+          />
+        ) : (
+          galaxies.map(({ dir, core, subFiles, childOrbit }, i) => {
+            const dirRadius = Math.hypot(dirPositions[i][0], dirPositions[i][2])
+            return (
+              <OrbitalGroup key={dir.path} speed={orbitSpeed(dirRadius) * speedFactor(dir.path)}>
+                <group position={dirPositions[i]}>
+                  <Planet
+                    node={dir}
+                    position={[0, 0, 0]}
+                    level={1}
+                    radius={core}
+                    selected={selectedPaths.has(dir.path)}
+                    searchMatch={searchMatchedPaths?.has(dir.path) ?? false}
+                    showLabel={showLabels}
+                    onSelect={(n) => onSelect([n])}
+                    onOpen={onOpen}
+                    onContextMenu={onContextMenu}
+                  />
+                  {subFiles.map((sub, j) => (
+                    <OrbitalGroup
+                      key={sub.path}
+                      speed={orbitSpeed(childOrbit) * speedFactor(sub.path)}
+                    >
+                      <Planet
+                        node={sub}
+                        position={layoutChildPosition(j, subFiles.length, childOrbit)}
+                        selected={selectedPaths.has(sub.path)}
+                        searchMatch={searchMatchedPaths?.has(sub.path) ?? false}
+                        showLabel={showLabels}
+                        onSelect={(n) => onSelect([n])}
+                        onOpen={onOpen}
+                        onContextMenu={onContextMenu}
+                      />
+                    </OrbitalGroup>
+                  ))}
+                </group>
+              </OrbitalGroup>
+            )
+          })
+        )}
       </Select>
 
       <Star
