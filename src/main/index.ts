@@ -16,6 +16,10 @@ import { createTray } from './tray'
 import { checkForUpdates } from './updater'
 import { installSystemIntegration } from './platform'
 
+// 扫描的海量 stat 依赖 libuv 线程池并发；默认 4 线程会成为吞吐瓶颈。
+// 必须在第一次异步 fs 调用前设置（线程池创建后此变量不再生效，届时无副作用）。
+process.env.UV_THREADPOOL_SIZE = process.env.UV_THREADPOOL_SIZE ?? '16'
+
 /** 缩略图缓存上限（文档 §九：防止数据库膨胀） */
 const THUMBNAIL_CACHE_LIMIT = 5000
 

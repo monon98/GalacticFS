@@ -22,8 +22,13 @@ export interface ScanOptions {
   maxDepth?: number
   /** 忽略的目录名列表（精确匹配、大小写不敏感，如 node_modules/.git） */
   ignoredFolders?: string[]
-  /** 进度回调（每扫描一个文件触发一次） */
-  onProgress?: (scanned: number, currentPath: string) => void
+  /**
+   * 进度回调（每处理一个文件触发一次，计数为全扫描累计值）。
+   * @param scanned 已处理文件总数（单调递增）
+   * @param currentPath 当前处理的文件路径
+   * @param phase 'size' = 目录大小统计阶段；缺省为目录树扫描阶段
+   */
+  onProgress?: (scanned: number, currentPath: string, phase?: 'size') => void
   /** 中断信号：aborted 后扫描立即抛出 ScanAbortedError（协作式取消） */
   signal?: AbortSignal
   /** 首层直接子项就绪回调（分段渲染：先显示行星，完整树完成后替换） */
@@ -39,8 +44,11 @@ export class ScanAbortedError extends Error {
 }
 
 export interface ScanProgress {
+  /** 已处理文件数（全扫描累计，含大小统计阶段，单调递增） */
   scanned: number
   currentPath: string
+  /** 'size' = 目录大小统计阶段（树已就绪、仍在计算星体半径）；缺省为目录扫描阶段 */
+  phase?: 'size'
 }
 
 export interface ThumbnailResult {

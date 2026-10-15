@@ -67,12 +67,17 @@ export function registerIpcHandlers(deps: {
   // 未命中时中止上一次扫描（快速切换目录），扫描选项从配置读取，深度固定 3。
   ipcMain.handle('scan-directory', async (event, dirPath: string) => {
     const win = BrowserWindow.fromWebContents(event.sender)
+    // 进度节流：大小统计阶段可达数十万文件，按 100ms 合并推送，避免事件淹没渲染进程
+    let lastProgressSentAt = 0
     const options = {
       includeHidden: configStore.includeHidden,
       ignoredFolders: configStore.ignoredFolders,
       maxDepth: 3,
-      onProgress: (scanned: number, currentPath: string) => {
-        win?.webContents.send('scan-progress', { scanned, currentPath })
+      onProgress: (scanned: number, currentPath: string, phase?: 'size') => {
+        const now = Date.now()
+        if (now - lastProgressSentAt < 100) return
+        lastProgressSentAt = now
+        win?.webContents.send('scan-progress', { scanned, currentPath, phase })
       },
       onFirstLevel: (root: FileNode) => {
         win?.webContents.send('scan-partial', root)

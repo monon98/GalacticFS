@@ -187,6 +187,31 @@ describe('NodeFsScanner', () => {
     }
   })
 
+  // 回归测试：进度计数必须是全扫描累计值（不随目录重置），
+  // 且深度受限的叶子壳走 getDirectorySize 时也要上报 size 阶段进度（进度条不冻结）
+  it('进度计数跨目录累计递增，叶子壳统计上报 size 阶段', async () => {
+    // 四层结构：root/a/b/c/d/e.txt —— c 位于扫描深度上限(3)成为叶子壳，
+    // 其内容仅能由 getDirectorySize 全量统计，恰好覆盖 size 阶段路径
+    const deep = join(root, 'a', 'b', 'c', 'd')
+    await mkdir(deep, { recursive: true })
+    await writeFile(join(deep, 'e.txt'), 'x'.repeat(10))
+    await writeFile(join(root, 'z.txt'), 'y')
+    const scanner = new NodeFsScanner()
+    const events: { scanned: number; phase?: 'size' }[] = []
+    await scanner.scan(root, {
+      onProgress: (scanned, _path, phase) => events.push({ scanned, phase })
+    })
+    expect(events.length).toBeGreaterThan(0)
+    // 严格递增：跨目录、跨阶段均不回退
+    for (let i = 1; i < events.length; i++) {
+      expect(events[i].scanned).toBeGreaterThan(events[i - 1].scanned)
+    }
+    // 叶子壳 c 内的文件在大小统计阶段被计数
+    expect(events.some((e) => e.phase === 'size')).toBe(true)
+    // 大小统计的文件也计入总量（e.txt + z.txt）
+    expect(events[events.length - 1].scanned).toBeGreaterThanOrEqual(2)
+  })
+
   it('文件系统错误不会中断整个扫描', async () => {
     await writeFile(join(root, 'ok.txt'), 'fine')
     const broken = join(root, 'broken-link')
