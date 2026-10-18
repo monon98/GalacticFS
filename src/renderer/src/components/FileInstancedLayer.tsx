@@ -39,6 +39,9 @@ interface FileInstancedLayerProps {
 const _dummy = new THREE.Object3D()
 const _color = new THREE.Color()
 const _raycaster = new THREE.Raycaster()
+// 复用的归一化坐标：Raycaster.setFromCamera 要求 Vector2 实例，
+// 而父组件传入的 mouse 只是普通 { x, y } 对象
+const _pointer = new THREE.Vector2()
 
 export function FileInstancedLayer({
   files,
@@ -129,7 +132,8 @@ export function FileInstancedLayer({
 
     // 射线检测悬停（使用父组件传入的 mouse）
     if (mouse && size.width > 0 && size.height > 0) {
-      _raycaster.setFromCamera(mouse, camera)
+      _pointer.set(mouse.x, mouse.y)
+      _raycaster.setFromCamera(_pointer, camera)
       const intersects = _raycaster.intersectObject(mesh)
       if (intersects.length > 0) {
         const idx = intersects[0].instanceId

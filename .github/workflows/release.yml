@@ -29,11 +29,16 @@ jobs:
       - name: 安装依赖（frozen-lockfile 保证可复现；better-sqlite3 走 prebuilds 免编译）
         run: pnpm install --frozen-lockfile
 
-      - name: 静态检查与单元测试
-        run: |
-          pnpm typecheck
-          pnpm lint
-          pnpm test
+      # 拆分为独立步骤：Windows 上 pwsh 不会因中间命令失败而中止整步，
+      # 合并步骤可能造成「检查失败但构建仍绿」的假阳性
+      - name: 类型检查
+        run: pnpm typecheck
+
+      - name: 代码规范检查
+        run: pnpm lint
+
+      - name: 单元测试
+        run: pnpm test
 
       - name: 打包并发布到 GitHub Releases
         env:
@@ -58,11 +63,16 @@ jobs:
       - name: 安装依赖
         run: pnpm install --frozen-lockfile
 
-      - name: 静态检查与单元测试
-        run: |
-          pnpm typecheck
-          pnpm lint
-          pnpm test
+      # 拆分为独立步骤：Windows 上 pwsh 不会因中间命令失败而中止整步，
+      # 合并步骤可能造成「检查失败但构建仍绿」的假阳性
+      - name: 类型检查
+        run: pnpm typecheck
+
+      - name: 代码规范检查
+        run: pnpm lint
+
+      - name: 单元测试
+        run: pnpm test
 
       - name: 打包 Linux 并发布（AppImage + deb；无代码签名）
         env:

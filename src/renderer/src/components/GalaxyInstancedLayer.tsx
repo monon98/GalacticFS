@@ -27,6 +27,21 @@ interface GalaxyInstancedLayerProps {
 const _dummy = new THREE.Object3D()
 const _color = new THREE.Color()
 
+/**
+ * 释放材质资源。
+ * three 中 mesh.material 的类型为 `Material | Material[]`，直接调用 dispose
+ * 在数组分支上不成立（类型报错），需要分支处理，避免清理时漏释放。
+ * @param material 待释放的材质（单个、数组、或空值）
+ */
+function disposeMaterial(material: THREE.Material | THREE.Material[] | null | undefined): void {
+  if (!material) return
+  if (Array.isArray(material)) {
+    material.forEach((m) => m.dispose())
+  } else {
+    material.dispose()
+  }
+}
+
 export function GalaxyInstancedLayer(props: GalaxyInstancedLayerProps): React.JSX.Element {
   const { galaxies, dirPositions } = props
 
@@ -145,7 +160,7 @@ export function GalaxyInstancedLayer(props: GalaxyInstancedLayerProps): React.JS
       if (!neededKeys.has(key)) {
         const mesh = refs.get(key)!
         mesh.geometry?.dispose()
-        mesh.material?.dispose()
+        disposeMaterial(mesh.material)
         refs.delete(key)
       }
     })
@@ -166,7 +181,7 @@ export function GalaxyInstancedLayer(props: GalaxyInstancedLayerProps): React.JS
       if (!mesh || mesh.count !== count) {
         if (mesh) {
           mesh.geometry?.dispose()
-          mesh.material?.dispose()
+          disposeMaterial(mesh.material)
         }
         mesh = new THREE.InstancedMesh(childGeom, childMat, count)
         mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage)
@@ -218,8 +233,8 @@ export function GalaxyInstancedLayer(props: GalaxyInstancedLayerProps): React.JS
     })
 
     coreMeshRef.current.instanceMatrix.needsUpdate = true
-    coreMesh2Ref.current.instanceMatrix.needsUpdate = true
-    coreMesh3Ref.current.instanceMatrix.needsUpdate = true
+    coreMesh2Ref.current!.instanceMatrix.needsUpdate = true
+    coreMesh3Ref.current!.instanceMatrix.needsUpdate = true
 
     // 更新子文件（相对星系核旋转）
     coreData.forEach((data) => {
@@ -251,15 +266,15 @@ export function GalaxyInstancedLayer(props: GalaxyInstancedLayerProps): React.JS
     return () => {
       childMeshRefs.current.forEach((mesh) => {
         mesh.geometry?.dispose()
-        mesh.material?.dispose()
+        disposeMaterial(mesh.material)
       })
       childMeshRefs.current.clear()
       coreMeshRef.current?.geometry?.dispose()
-      coreMeshRef.current?.material?.dispose()
+      disposeMaterial(coreMeshRef.current?.material)
       coreMesh2Ref.current?.geometry?.dispose()
-      coreMesh2Ref.current?.material?.dispose()
+      disposeMaterial(coreMesh2Ref.current?.material)
       coreMesh3Ref.current?.geometry?.dispose()
-      coreMesh3Ref.current?.material?.dispose()
+      disposeMaterial(coreMesh3Ref.current?.material)
     }
   }, [])
 

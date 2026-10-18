@@ -1,0 +1,3 @@
+# 统一行尾为 LF（含 Windows 检出），避免 Prettier（endOfLine 默认 lf）
+# 在 CI 上报 "Delete ␍"；二进制文件由 auto 自动识别，不受影响
+* text=auto eol=lf
