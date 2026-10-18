@@ -1,6 +1,6 @@
 {
   "name": "galacticfs",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "3D 空间文件浏览器：目录是恒星、文件是行星（GalacticFS）",
   "main": "./out/main/index.js",
   "author": "monon98",
